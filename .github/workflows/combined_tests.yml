@@ -1,4 +1,4 @@
-name: Go
+name: API tests
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
 jobs:
 
   build:
+    name: All tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -15,6 +16,9 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.15
+
+    - name: Stop default MySQL
+      run: sudo service mysql stop
         
     - name: Set up MySQL 8.0
       uses: mirromutth/mysql-action@v1.1
@@ -23,23 +27,27 @@ jobs:
         container port: 3306 # Optional, default value is 3306. The port of container
         character set server: 'utf8' # Optional, default value is 'utf8mb4'. The '--character-set-server' option for mysqld
         collation server: 'utf8_general_ci' # Optional, default value is 'utf8mb4_general_ci'. The '--collation-server' option for mysqld
-        mysql version: '8.0' # Optional, default value is "latest". The version of the MySQL
+        mysql version: '8.0.23' # Optional, default value is "latest". The version of the MySQL
         mysql database: 'test_database' # Optional, default value is "test". The specified database which will be create
         mysql root password: '123456' # Required if "mysql user" is empty, default is empty. The root superuser password
         mysql user: 'test_user' # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
         mysql password: '123456' # Required if "mysql user" exists. The password for the "mysql user"
-    
 
-    - name: Build
+    - name: Sleep for 30 seconds
+      uses: juliangruber/sleep-action@v1
+      with:
+        time: '30s'
+
+    - name: Build API
       run: go build -v ./...
       working-directory: 'api/'
 
     - name: Test API
       env:
-        DB_USERNAME: "root"
-        DB_PASSWORD: "123456"
-        DB_HOST: "192.168.1.7:3306"
-        DB_NAME: "test_database"
+        DB_USERNAME: root
+        DB_PASSWORD: 123456
+        DB_HOST: localhost:3306
+        DB_NAME: test_database
       run: go test -v ./...
       working-directory: 'api/'
       
