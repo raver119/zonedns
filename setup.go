@@ -1,4 +1,4 @@
-package plugin
+package zonedns
 
 import (
 	"github.com/coredns/caddy"
@@ -20,7 +20,13 @@ func setup(c *caddy.Controller) error {
 
 	// Add the Plugin to CoreDNS, so Servers can use it in their plugin chain.
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
-		return ZonedNS{}
+		// FIXME: make these values configurable via plugin options
+		z, err := BuildZonedNS(1200, 900)
+		if err != nil {
+			panic(err)
+		}
+
+		return z
 	})
 
 	// All OK, return a nil error.

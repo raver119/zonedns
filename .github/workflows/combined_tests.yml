@@ -38,16 +38,14 @@ jobs:
       with:
         time: '30s'
 
-    - name: Build API
+    - name: Build ZonedNS
       run: go build -v ./...
-      working-directory: 'api/'
 
-    - name: Test API
+    - name: Test ZonedNS
       env:
         DB_USERNAME: root
         DB_PASSWORD: 123456
         DB_HOST: localhost:3306
         DB_NAME: test_database
       run: go test -v ./...
-      working-directory: 'api/'
       
