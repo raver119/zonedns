@@ -7,7 +7,7 @@ import (
 )
 
 // init registers this plugin.
-func init() { plugin.Register("example", setup) }
+func init() { plugin.Register("zonedns", setup) }
 
 func setup(c *caddy.Controller) error {
 	c.Next() // Ignore "example" and give us the next token.
