@@ -67,7 +67,12 @@ func TestMySqlStorage_Test_Domain_CRUD(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	domain := Domain{Name: "example.com", ZoneID: 18, Txt: "Some text here"}
+	zone, err := storage.AddZone(Zone{Name: "EU", A: []IPv4{}, AAAA: []IPv6{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	domain := NewDomain("example.com", zone)
 
 	d, err := storage.AddDomain(domain)
 	if err != nil {
@@ -102,6 +107,11 @@ func TestMySqlStorage_Test_Domain_CRUD(t *testing.T) {
 	}
 
 	err = storage.DeleteDomain(d)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = storage.DeleteZone(zone)
 	if err != nil {
 		t.Error(err)
 	}

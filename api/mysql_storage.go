@@ -30,35 +30,36 @@ func NewMySqlStorage() (MySqlStorage, error) {
 	return BuildMySqlStorage(username, password, hostname, database)
 }
 
-func BuildMySqlStorage(username string, password string, hostname string, database string) (MySqlStorage, error) {
+func buildMySqlConnection(username string, password string, hostname string, database string) (db *sql.DB, err error) {
 	address := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8", username, password, hostname, database)
 	fmt.Printf("Connecting to MySQL server: %v:%v@tcp(%v)/%v?charset=utf8\n", username, "******", hostname, database)
 
-	db, err := sql.Open("mysql", address)
+	db, err = sql.Open("mysql", address)
 	if err != nil {
-		fmt.Printf("Failed on Open\n")
-		return MySqlStorage{}, err
+		return nil, err
 	}
 
 	err = db.Ping()
 	if err != nil {
-		fmt.Printf("Failed on Ping\n")
-		return MySqlStorage{}, err
+		return nil, err
 	}
 
-	// wtf?
-	//db.SetMaxIdleConns(0)
-	//db.SetMaxOpenConns(10)
-	//db.SetConnMaxLifetime(100 * time.Second)
+	return
+}
 
-	storage := MySqlStorage{db, MySqlReader{db}}
-	err = storage.init()
+func BuildMySqlStorage(username string, password string, hostname string, database string) (s MySqlStorage, err error) {
+	db, err := buildMySqlConnection(username, password, hostname, database)
 	if err != nil {
-		fmt.Printf("Failed on init\n")
+		return
+	}
+
+	s = MySqlStorage{db, MySqlReader{db}}
+	err = s.init()
+	if err != nil {
 		return MySqlStorage{}, err
 	}
 
-	return storage, err
+	return s, err
 }
 
 func (m MySqlStorage) FetchZones() (z []Zone, err error) {
@@ -165,11 +166,23 @@ func (m MySqlStorage) LookupDomain(domain string) (d Domain, err error) {
 	return m.r.LookupDomain(domain)
 }
 
+/*
+	This method adds specified domain
+*/
 func (m MySqlStorage) AddDomainAsString(domain string, zoneId int64) (d Domain, err error) {
 	return m.AddDomain(Domain{Name: domain, ZoneID: zoneId})
 }
 
+/*
+	This method adds specified domain to the database
+*/
 func (m MySqlStorage) AddDomain(domain Domain) (d Domain, err error) {
+	_, err = m.r.fetchZoneById(domain.ZoneID)
+	if err != nil {
+		err = fmt.Errorf("unable to find specified zone %v", domain.ZoneID)
+		return
+	}
+
 	res, err := m.db.Exec("INSERT INTO ZNS_domains(d_zid, d_name, d_txt, d_mx) VALUES (?, ?, ?, ?)", domain.ZoneID, domain.Name, domain.Txt, "{}")
 	if err != nil {
 		return Domain{}, err
@@ -183,6 +196,9 @@ func (m MySqlStorage) AddDomain(domain Domain) (d Domain, err error) {
 	return m.r.fetchDomainById(id)
 }
 
+/*
+	This method updates specified domain in the database.
+*/
 func (m MySqlStorage) UpdateDomain(d Domain) (dom Domain, err error) {
 	_, err = m.db.Exec("UPDATE ZNS_domains SET d_zid=?, d_name=?, d_txt=? WHERE d_id=? LIMIT 1", d.ZoneID, d.Name, d.Txt, d.id)
 	if err != nil {
@@ -192,10 +208,16 @@ func (m MySqlStorage) UpdateDomain(d Domain) (dom Domain, err error) {
 	return m.r.fetchDomainById(d.id)
 }
 
+/*
+	This method allows to delete specified domain from the database
+*/
 func (m MySqlStorage) DeleteDomain(domain Domain) (err error) {
 	return m.DeleteDomainById(domain.id)
 }
 
+/*
+	This method allows to delete domain with specified ID from the database
+*/
 func (m MySqlStorage) DeleteDomainById(domainId int64) (err error) {
 	_, err = m.db.Exec("DELETE FROM ZNS_domains WHERE d_id=? LIMIT 1", domainId)
 	return

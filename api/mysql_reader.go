@@ -10,6 +10,20 @@ type MySqlReader struct {
 	db *sql.DB
 }
 
+func NewMySqlReader() (MySqlReader, error) {
+	username := GetEnvOrDefault("DB_USERNAME", "")
+	password := GetEnvOrDefault("DB_PASSWORD", "")
+	hostname := GetEnvOrDefault("DB_HOST", "localhost")
+	database := GetEnvOrDefault("DB_NAME", "zonedns")
+
+	return BuildMySqlReader(username, password, hostname, database)
+}
+
+func BuildMySqlReader(username string, password string, hostname string, database string) (MySqlReader, error) {
+	db, err := buildMySqlConnection(username, password, hostname, database)
+	return MySqlReader{db: db}, err
+}
+
 func (m *MySqlReader) fetchZoneById(zoneId int64) (z Zone, err error) {
 	row := m.db.QueryRow("SELECT z_id, z_name, z_a, z_aaaa FROM ZNS_zones WHERE z_id=?", zoneId)
 

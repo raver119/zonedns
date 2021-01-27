@@ -28,3 +28,11 @@ func validateIPv4(v IPv4) bool {
 func validateIPv6(v IPv6) bool {
 	return net.ParseIP(string(v)) != nil
 }
+
+func NewDomain(domain string, zone Zone) Domain {
+	return Domain{
+		Name:   domain,
+		ZoneID: zone.id,
+		Txt:    "",
+	}
+}
