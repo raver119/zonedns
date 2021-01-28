@@ -7,8 +7,11 @@ import (
 	"github.com/miekg/dns"
 	"github.com/raver119/zonedns-go-api"
 	"net"
+	"regexp"
 	"time"
 )
+
+var re = regexp.MustCompile("\\.$")
 
 type ZonedNS struct {
 	zones Zones
@@ -54,7 +57,7 @@ func (z ZonedNS) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 	var zone api.Zone
 	var ok bool
 
-	dom, err := z.back.LookupDomain(qname)
+	dom, err := z.back.LookupDomain(re.ReplaceAllString(qname, ""))
 	if err != nil {
 		// NXDOMAIN
 		return dns.RcodeNameError, err

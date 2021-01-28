@@ -36,7 +36,7 @@ jobs:
     - name: Sleep for 30 seconds
       uses: juliangruber/sleep-action@v1
       with:
-        time: '30s'
+        time: '29s'
 
     - name: Build ZonedNS
       run: go build -v ./...
